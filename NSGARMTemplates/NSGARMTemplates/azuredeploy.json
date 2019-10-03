@@ -1,0 +1,187 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.1",
+  "parameters": {
+    "virtualNetworkResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "The resource group where the existing VNet is located."
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "defaultValue": "default",
+      "metadata": {
+        "description": "The name of the existing subnet."
+      }
+    },
+    "region": {
+      "type": "string",
+      "defaultValue": "ncus",
+      "metadata": {
+        "description": "This is the region that the resources will be deployed to."
+      }
+    },
+    "regionAbbrev": {
+      "type": "string",
+      "defaultValue": "ncus",
+      "metadata": {
+        "description": "This is the region that the resources will be deployed to for naming conventions."
+      }
+    },
+    "environment": {
+      "type": "string",
+      "metadata": {
+        "description": "This is the environment that we're deploying to for naming conventions."
+      }
+    },
+    "nsg": {
+      "type": "array",
+      "metadata": {
+        "description": "This is the environment that we're deploying to for naming conventions."
+      }
+    },
+    "virtualNetworkDetails": {
+      "type": "object",
+      "metadata": {
+        "description": "This is the environment that we're deploying to for naming conventions."
+      }
+    }
+  },
+  "variables": {
+    "apiVersion": "2018-03-01",
+    "ctxstorefrontNsgName": "[concat('nsg-ctxstorefront-',parameters('regionAbbrev'),parameters('environment'))]",
+    "resourceName": {
+      "copy": [
+        {
+          "name": "resources",
+          "count": "[length(parameters('nsg'))]",
+          "input": {
+            "nsgName": "[tolower(concat('nsg-', parameters('regionAbbrev'),'-vNet',parameters('region'),'-', parameters('nsg')[copyIndex('resources')].vnetName,'-', parameters('nsg')[copyIndex('resources')].subnetName))]"
+          }
+        }
+      ]
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[variables('resourceName').resources[copyIndex()].nsgName]",
+      "location": "[parameters('region')]",
+      "apiVersion": "[variables('apiVersion')]",
+      "copy": {
+        "name": "nsgcopy",
+        "count": "[length(parameters('nsg'))]"
+      },
+      "tags": {
+        "displayName": "Ctxstorefront NSG"
+      },
+      "properties": {
+        "securityRules": "[parameters('nsg')[copyIndex()].nsgRules]"
+      }
+    },
+    {
+      "apiVersion": "2017-08-01",
+      "name": "[concat('apply-nsg-to-subnet',parameters('nsg')[copyIndex('subnetcopy')].subnetName)]",
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[resourceGroup().name]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('resourceName').resources[copyIndex()].nsgName)]"
+      ],
+      "copy": {
+        "name": "subnetcopy",
+        "count": "[length(parameters('nsg'))]"
+      },
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "apiVersion": "2018-03-01",
+              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "name": "[concat(parameters('nsg')[copyIndex('subnetcopy')].vnetName, '/', parameters('nsg')[copyIndex('subnetcopy')].subnetName)]",
+
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "addressPrefix": "[reference(resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks/subnets', parameters('nsg')[copyIndex('subnetcopy')].vnetName, parameters('nsg')[copyIndex('subnetcopy')].subnetName), '2018-03-01').addressPrefix]",
+                "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('resourceName').resources[copyIndex('subnetcopy')].nsgName)]"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "apiVersion": "2017-08-01",
+      "name": "create-vnet",
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[parameters('virtualNetworkResourceGroupName')]",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "apiVersion": "2018-10-01",
+              "type": "Microsoft.Network/virtualNetworks",
+              "name": "[parameters('virtualNetworkDetails').vNentName]",
+              "location": "[parameters('region')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('virtualNetworkDetails').vnetAddressPrefix]"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "apiVersion": "2017-08-01",
+      "name": "[concat('create-subnets',parameters('virtualNetworkDetails').subnetDetails[copyIndex()].subnetName)]",
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[parameters('virtualNetworkResourceGroupName')]",
+      "copy": {
+        "name": "subnetcopy",
+        "count": "[length(parameters('virtualNetworkDetails').subnetDetails)]",
+        "mode": "Serial"
+      },
+      "dependsOn": [
+        "create-vnet"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "apiVersion": "2018-10-01",
+              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "location": "[parameters('region')]",
+              "name": "[concat(parameters('virtualNetworkDetails').vNentName,'/',parameters('virtualNetworkDetails').subnetDetails[copyIndex('subnetcopy')].subnetName)]",
+              "properties": {
+                "addressPrefix": "[parameters('virtualNetworkDetails').subnetDetails[copyIndex('subnetcopy')].subnetPrefix]"
+              }
+            }
+          ]
+        }
+      }
+    }
+
+          ],
+          "outputs": {
+
+            //"nsgRules": {
+            //  "type": "array",
+            //  "value": "[reference(resourceid('Microsoft.Network/networkSecurityGroups', variables('ctxstorefrontNsgName')),variables('apiVersion'))]"
+            //}
+          }
+        }
