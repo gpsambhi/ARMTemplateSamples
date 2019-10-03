@@ -1,0 +1,105 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualNetworkResourceGroupName": {
+      "value": "vNet-EUS2"
+    },
+    "virtualNetworkDetails": {
+      "value": 
+        {
+          "vNentName": "vnet2",
+          "vnetAddressPrefix": "11.1.0.0/24",
+          "subnetDetails": [
+            {
+              "subnetName": "subnet1",
+              "subnetPrefix": "11.1.0.0/28"
+            },
+            {
+              "subnetName": "subnet2",
+              "subnetPrefix": "11.1.0.16/28"
+            }
+          ]
+        }
+    },
+    "region": {
+      "value": "eastus2"
+    },
+    "environment": {
+      "value": "dev"
+    },
+    "nsg": {
+      "value": [
+        {
+          "vnetName": "vnet1",
+          "subnetName": "subnet1",
+          "nsgRules": [
+            {
+              "name": "Inbound-tcp-NSIP",
+              "properties": {
+                "description": "",
+                "protocol": "Tcp",
+                "sourceAddressPrefix": "10.140.1.96/27",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "443",
+                "access": "Allow",
+                "priority": 300,
+                "direction": "Inbound"
+              }
+            },
+            {
+              "name": "Inbound-tcp-test1",
+              "properties": {
+                "description": "",
+                "protocol": "Tcp",
+                "sourceAddressPrefix": "10.145.0.1/27",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "443",
+                "access": "Allow",
+                "priority": 305,
+                "direction": "Inbound"
+              }
+            }
+          ]
+        },
+        {
+          "vnetName": "vnet1",
+          "subnetName": "subnet2",
+          "nsgRules": [
+            {
+              "name": "Inbound-tcp-test2",
+              "properties": {
+                "description": "",
+                "protocol": "Tcp",
+                "sourceAddressPrefix": "10.140.1.2",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "445",
+                "access": "Allow",
+                "priority": 300,
+                "direction": "Inbound"
+              }
+            },
+            {
+              "name": "Inbound-tcp-test3",
+              "properties": {
+                "description": "",
+                "protocol": "Tcp",
+                "sourceAddressPrefix": "10.145.5.6",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "445",
+                "access": "Allow",
+                "priority": 305,
+                "direction": "Inbound"
+              }
+            }
+          ]
+        }
+
+      ]
+    }
+  }
+}
