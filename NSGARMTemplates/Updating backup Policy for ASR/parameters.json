@@ -1,0 +1,51 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vaultName": {
+            "value": "ASRV-Infra-Backup-Prod-USE2"
+        },
+        "vaultRG": {
+            "value": "RG-Infra-Recovery-Prod-USE2"
+        },
+        "vaultSubID": {
+            "value": "f1e34301-c396-4b15-9f25-cab99b61ce7a"
+        },
+        "instantRpRetentionRangeInDays": {
+            "value": 2
+        },
+        "policyName": {
+            "value": "Daily-5AmEST-3Days-v2"
+        },
+        "schedule": {
+            "value": {
+                "scheduleRunFrequency": "Daily",
+                "scheduleRunDays": null,
+                "scheduleRunTimes": [
+                    "2019-07-10T05:00:00.000Z"
+                ],
+                "schedulePolicyType": "SimpleSchedulePolicy"
+            }
+        },
+        "retention": {
+            "value": {
+                "dailySchedule": {
+                    "retentionTimes": [
+                        "2019-07-10T05:00:00.000Z"
+                    ],
+                    "retentionDuration": {
+                        "count": 3,
+                        "durationType": "Days"
+                    }
+                },
+                "weeklySchedule": null,
+                "monthlySchedule": null,
+                "yearlySchedule": null,
+                "retentionPolicyType": "LongTermRetentionPolicy"
+            }
+        },
+        "timeZone": {
+            "value": "Eastern Standard Time"
+        }
+    }
+}
