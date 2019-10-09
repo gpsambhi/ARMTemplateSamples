@@ -1,0 +1,61 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "customTags": { "type": "object" },
+    "serviceBusNamespaceName": { "type": "string" },
+    "serviceBusQueuePrefix": { "type": "string" },
+    "serviceBusQueues": { "type": "array" },
+    "serviceBusQueueEnablePartitioning": { "type": "bool" },
+    "serviceBusQueuesAuthRules": { "type": "array" }
+  },
+  "variables": {
+
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-04-01",
+      "name": "[concat(parameters('serviceBusNamespaceName') , '/', parameters('serviceBusQueuePrefix'), parameters('serviceBusQueues')[copyindex()])]",
+      "type": "Microsoft.ServiceBus/namespaces/Queues",
+      "tags": "[parameters('customTags')]",
+      "copy": {
+        "name": "allQueues",
+        "count": "[length(parameters('serviceBusQueues'))]"
+      },
+      "properties": {
+        "lockDuration": "PT2M",
+        "maxSizeInMegabytes": "5120",
+        "requiresDuplicateDetection": "true",
+        "requiresSession": "false",
+        "defaultMessageTimeToLive": "P10675199DT2H48M5.4775807S",
+        "deadLetteringOnMessageExpiration": "false",
+        "duplicateDetectionHistoryTimeWindow": "PT10M",
+        "maxDeliveryCount": "10",
+        "autoDeleteOnIdle": "P10675199DT2H48M5.4775807S",
+        "enablePartitioning": "[parameters('serviceBusQueueEnablePartitioning')]",
+        "enableExpress": "false"
+      },
+      "resources": [
+        {
+          "apiVersion": "2017-04-01",
+          "name": "[parameters('serviceBusQueuesAuthRules')[0].name]",
+          "type": "AuthorizationRules",
+          "dependsOn": [
+            "[concat( parameters('serviceBusQueuePrefix'), parameters('serviceBusQueues')[copyindex('allQueues')])]"
+          ],
+          "location": "[resourceGroup().location]",
+          "properties": {
+            "rights": "[parameters('serviceBusQueuesAuthRules')[0].permission]"
+    
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "serviceBusQueues": {
+      "type": "array",
+      "value": [ "[reference(resourceid('Microsoft.ServiceBus/namespaces/Queues', parameters('serviceBusNamespaceName'),concat(parameters('serviceBusQueuePrefix'),parameters('serviceBusQueues')[0])),'2017-04-01', 'full')]", "[reference(resourceid('Microsoft.ServiceBus/namespaces/Queues', parameters('serviceBusNamespaceName'),concat(parameters('serviceBusQueuePrefix'),parameters('serviceBusQueues')[1])),'2017-04-01', 'full')]", "[reference(resourceid('Microsoft.ServiceBus/namespaces/Queues', parameters('serviceBusNamespaceName'),concat(parameters('serviceBusQueuePrefix'),parameters('serviceBusQueues')[2])),'2017-04-01', 'full')]", "[reference(resourceid('Microsoft.ServiceBus/namespaces/Queues', parameters('serviceBusNamespaceName'),concat(parameters('serviceBusQueuePrefix'),parameters('serviceBusQueues')[3])),'2017-04-01', 'full')]", "[reference(resourceid('Microsoft.ServiceBus/namespaces/Queues', parameters('serviceBusNamespaceName'),concat(parameters('serviceBusQueuePrefix'),parameters('serviceBusQueues')[4])),'2017-04-01', 'full')]", "[reference(resourceid('Microsoft.ServiceBus/namespaces/Queues', parameters('serviceBusNamespaceName'),concat(parameters('serviceBusQueuePrefix'),parameters('serviceBusQueues')[5])),'2017-04-01', 'full')]" ]
+    }
+  }
+}

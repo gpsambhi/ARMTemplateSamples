@@ -1,0 +1,38 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "webAppName": { "type": "string" },
+    "customHostname": { "type": "string" },
+    "certificateName": { "type": "string" },
+    "customTags": { "type": "object" },
+    "status":{"type": "string"}
+  },
+  "variables": {
+  },
+  "resources": [
+    {
+      "condition": "[equals(toLower(parameters('status')), 'ENABLED')]",
+      "type": "Microsoft.Web/sites/hostnameBindings",
+      "name": "[concat(parameters('webAppName'), '/', parameters('customHostname'))]",
+      "apiVersion": "2016-03-01",
+      "location": "[resourceGroup().location]",
+      "tags": "[parameters('customTags')]",
+      "properties": {
+        "siteName": "[parameters('webAppName')]",
+        "domainId": null,
+        "azureResourceType": "Website",
+        "customHostNameDnsRecordType": "CName",
+        "hostNameType": "Verified",
+        "sslState": "SniEnabled",
+        "thumbprint": "[reference(resourceId('Microsoft.Web/certificates', parameters('certificateName')), '2016-03-01').Thumbprint]"
+      }
+    }
+  ],
+ "outputs": {
+    "hostnameBindings": {
+      "type": "object",
+      "value": "[reference(resourceid('Microsoft.Web/sites/hostnameBindings', parameters('webAppName'), parameters('customHostname')),'2016-03-01', 'full')]"
+    }
+  }
+}
