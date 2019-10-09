@@ -1,0 +1,24 @@
+﻿{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "cloudServiceName": {
+            "type": "string"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.ClassicCompute/domainNames",
+            "name": "[parameters('cloudServiceName')]",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-01"
+        }
+    ],
+    "outputs": {
+        "cloudService": {
+            "type": "object",
+            "value": "[reference(resourceid('Microsoft.ClassicCompute/domainNames', parameters('cloudServiceName')),'2015-06-01', 'full')]"
+        }
+    }
+}

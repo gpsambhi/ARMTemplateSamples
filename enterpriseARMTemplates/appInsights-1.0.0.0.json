@@ -1,0 +1,31 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "customTags": { "type": "object" },
+    "applicationInsightsName": { "type": "string" }
+  },
+  "variables": {
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/components",
+      "kind": "web",
+      "name": "[parameters('applicationInsightsName')]",
+      "location": "[if(equals(resourceGroup().location,'East US 2'),'East US',resourceGroup().location)]",
+      "apiVersion": "2015-05-01",
+      "tags": "[parameters('customTags')]",
+      "properties": {
+        "Application_Type": "web",
+        "ApplicationId": "[parameters('appName')]"
+
+      }
+    }
+  ],
+  "outputs": {
+    "applicationInsight": {
+      "type": "object",
+      "value": "[reference(resourceid('Microsoft.Insights/components', parameters('applicationInsightsName')),'2015-05-01', 'full')]"
+    }
+  }
+}
