@@ -1,0 +1,68 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "customTags": { "type": "object" },
+    "redisCacheCapacity": { "type": "int" },
+    "redisCacheDiagnosticsStatus": { "type": "string" },
+    "redisCacheEnableNonSslPort": { "type": "bool" },
+    "redisCacheFamily": { "type": "string" },
+    "redisCacheName": { "type": "string" },
+    "redisCacheSKU": { "type": "string" },
+    "workspaceName": { "type": "string" },
+    "omsResourceGroupName": { "type": "string" },
+    "maxfragmemoryreserved": { "type": "string" }
+
+  },
+  "variables": {
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Cache/Redis",
+      "name": "[parameters('redisCacheName')]",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2017-10-01",
+      "tags": "[parameters('customTags')]",
+      "properties": {
+        "enableNonSslPort": "[parameters('redisCacheEnableNonSslPort')]",
+        "sku": {
+          "capacity": "[parameters('redisCacheCapacity')]",
+          "family": "[parameters('redisCacheFamily')]",
+          "name": "[parameters('redisCacheSKU')]"
+        },
+        "redisConfiguration": { "maxfragmentationmemory-reserved": "[parameters('maxfragmemoryreserved')]" }
+      },
+      "resources": [
+        {
+          "type": "Microsoft.Cache/redis/providers/diagnosticsettings",
+          "name": "[concat(parameters('redisCacheName'), '/Microsoft.Insights/','Diag-oms-', parameters('redisCacheName'))]",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2017-05-01-preview",
+          "dependsOn": [
+            "[concat('Microsoft.Cache/Redis/', parameters('redisCacheName'))]"
+          ],
+          "properties": {
+            "name": "diag-oms-rdc",
+            "storageAccountId": null,
+            "eventHubAuthorizationRuleId": null,
+            "eventHubName": null,
+            "workspaceId": "[resourceId(parameters('omsResourceGroupName'),'Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]",
+            "logs": [],
+            "metrics": [
+              {
+                "timeGrain": "AllMetrics",
+                "enabled": "[parameters('redisCacheDiagnosticsStatus')]"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "redisCache": {
+      "type": "object",
+      "value": "[reference(resourceid('Microsoft.Cache/Redis', parameters('redisCacheName')),'2017-10-01', 'full')]"
+    }
+  }
+}
