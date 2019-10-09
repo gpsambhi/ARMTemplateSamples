@@ -1,0 +1,51 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "sqlServerName": { "type": "string" },
+    "customTags": { "type": "object" },
+    "sqlDatabaseCollation": { "type": "string" },
+    "sqlDatabaseEdition": { "type": "string" },
+    "sqlDatabaseMaxSizeBytes": { "type": "string" },
+    "sqlDatabaseName": { "type": "string" },
+    "sqlDatabaseRequestedServiceObjectiveName": { "type": "string" },
+    "isReplicatedServer": { "type": "string" },
+    "isReplicatedDatabase": { "type": "string" },
+    "sourceResourceGroupName": { "type": "string" }
+  },
+  "variables": {
+    "noReplication": {
+      "edition": "[parameters('sqlDatabaseEdition')]",
+      "collation": "[parameters('sqlDatabaseCollation')]",
+      "maxSizeBytes": "[parameters('sqlDatabaseMaxSizeBytes')]"
+    },
+    "ReplicationEnabled": {
+      "edition": "[parameters('sqlDatabaseEdition')]",
+      "collation": "[parameters('sqlDatabaseCollation')]",
+      "maxSizeBytes": "[parameters('sqlDatabaseMaxSizeBytes')]",
+      "sourceDatabaseId": "[resourceId(subscription().subscriptionId,parameters('sourceResourceGroupName'),'Microsoft.Sql/servers/databases', parameters('isReplicatedServer'), parameters('isReplicatedDatabase'))]",
+      "createMode": "OnlineSecondary",
+      "status": "Offline",
+      "containmentState": 2
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "name": "[concat(parameters('sqlServerName'),'/',parameters('sqlDatabaseName'))]",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2017-10-01-preview",
+      "sku": {
+        "name": "[parameters('sqlDatabaseRequestedServiceObjectiveName')]"
+      },
+      "tags": "[parameters('customTags')]",
+      "properties": "[if(greater(length(parameters('isReplicatedDatabase')  ), 1  ), variables('ReplicationEnabled'),variables('noReplication'))]"
+    }
+  ],
+  "outputs": {
+    "sqlDatabase": {
+      "type": "object",
+      "value": "[reference(resourceid('Microsoft.SQL/servers/databases', parameters('sqlServerName'), parameters('sqlDatabaseName')),'2017-10-01-preview', 'full')]"
+    }
+  }
+}
